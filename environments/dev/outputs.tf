@@ -1,9 +1,9 @@
-# URL de invocación de la API Gateway
+# URL de invocacion de la API Gateway
 output "api_url" {
-  value = module.apigateway.api_url
+  value = aws_api_gateway_stage.main.invoke_url
 }
 
-# API Key (márcala como sensible para que no se vea en los logs)
+# API Key (marcala como sensible para que no se vea en los logs)
 output "api_key_value" {
   value     = module.apigateway.api_key_value
   sensitive = true
@@ -14,12 +14,33 @@ output "cloudfront_domain_name" {
   value = module.cloudfront.cloudfront_domain_name
 }
 
-# ID del User Pool de Cognito
-output "user_pool_id" {
-  value = module.cognito.user_pool_id
+# --- Auth Module ---
+output "auth_lambda_function_name" {
+  value = module.auth.auth_lambda_function_name
 }
 
-# ID del Cliente de Cognito
-output "client_id" {
-  value = module.cognito.client_id
+output "auth_dynamodb_table_name" {
+  value = module.auth.dynamodb_table_name
+}
+
+output "jwt_secret_arn" {
+  value     = module.auth.jwt_secret_arn
+  sensitive = true
+}
+
+# --- Catalog Module ---
+output "catalog_lambda_function_name" {
+  value = module.catalog.catalog_lambda_function_name
+}
+
+output "stores_table_name" {
+  value = module.catalog.stores_table_name
+}
+
+output "products_table_name" {
+  value = module.catalog.products_table_name
+}
+
+output "cart_table_name" {
+  value = module.catalog.cart_table_name
 }

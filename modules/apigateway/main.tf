@@ -10,58 +10,13 @@ resource "aws_api_gateway_resource" "v1" {
   path_part   = "v1"
 }
 
-# Recursos de ejemplo: /products, /users, etc.
-resource "aws_api_gateway_resource" "products" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  parent_id   = aws_api_gateway_resource.v1.id
-  path_part   = "products"
-}
-
-# Método GET /v1/products (con autorización Cognito)
-resource "aws_api_gateway_method" "get_products" {
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.products.id
-  http_method   = "GET"
-  authorization = "COGNITO_USER_POOLS"
-  authorizer_id = aws_api_gateway_authorizer.cognito.id
-  api_key_required = true
-}
-
-# Integración MOCK (temporal) para que el plan funcione
-resource "aws_api_gateway_integration" "get_products" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.products.id
-  http_method = aws_api_gateway_method.get_products.http_method
-  type        = "MOCK"
-  request_templates = {
-    "application/json" = "{\"statusCode\": 200}"
-  }
-}
-
-# Authorizer Cognito
-resource "aws_api_gateway_authorizer" "cognito" {
-  name          = "${var.project_name}-authorizer"
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  type          = "COGNITO_USER_POOLS"
-  provider_arns = [var.cognito_user_pool_arn]
-}
-
-# Deployment
-resource "aws_api_gateway_deployment" "deployment" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  depends_on  = [aws_api_gateway_integration.get_products]
-}
-
-# Stage dev
-resource "aws_api_gateway_stage" "dev" {
-  deployment_id = aws_api_gateway_deployment.deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = "dev"
-}
+# Las rutas reales bajo /v1 (stores, products, cart, etc.) las crea cada
+# modulo de feature (catalog, orders, ...) usando el output v1_resource_id,
+# protegidas con el Lambda Authorizer JWT del modulo auth.
 
 # API Key
 resource "aws_api_gateway_api_key" "api_key" {
-  name = "${var.project_name}-${var.environment}-api-key"
+  name    = "${var.project_name}-${var.environment}-api-key"
   enabled = true
 }
 

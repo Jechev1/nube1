@@ -21,14 +21,18 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-# Políticas para DynamoDB (cada tabla)
+# Politica para DynamoDB (todas las tablas base, en un solo policy attachment).
+# NOTA: AWS permite max 10 managed policies por rol. Al usar un rol
+# compartido para todas las Lambdas, cada modulo (auth, catalog, orders...)
+# suma sus propias policies a ese mismo limite. Este policy unico (en vez de
+# uno por tabla) deja mas margen, pero sigue sin ser minimo privilegio real:
+# la forma correcta es un rol por Lambda, scoped a lo que esa Lambda usa.
 locals {
   tables = ["Products", "Stores", "Orders", "Cart", "Users"]
 }
 
 resource "aws_iam_policy" "dynamodb" {
-  for_each = toset(local.tables)
-  name     = "${var.project_name}-${var.environment}-dynamodb-${each.value}"
+  name = "${var.project_name}-${var.environment}-dynamodb-base-tables"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -42,21 +46,20 @@ resource "aws_iam_policy" "dynamodb" {
           "dynamodb:Scan",
           "dynamodb:Query"
         ]
-        Resource = [
-          "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/${each.value}",
-          "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/${each.value}/index/*"
-        ]
+        Resource = flatten([
+          for t in local.tables : [
+            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/${t}",
+            "arn:aws:dynamodb:${var.aws_region}:${var.account_id}:table/${t}/index/*"
+          ]
+        ])
       }
     ]
   })
 }
 
-# Adjuntar cada política al rol (esto hace que el rol tenga permisos sobre TODAS las tablas, lo cual no es mínimo privilegio si una Lambda solo necesita una tabla)
-# Para cumplir, se deberían crear roles separados. Por simplicidad, adjuntamos todas, pero en la práctica cada Lambda usaría un rol diferente.
 resource "aws_iam_role_policy_attachment" "dynamodb_attach" {
-  for_each   = aws_iam_policy.dynamodb
   role       = aws_iam_role.lambda_role.name
-  policy_arn = each.value.arn
+  policy_arn = aws_iam_policy.dynamodb.arn
 }
 
 # Política para EventBridge (put events)

@@ -15,6 +15,6 @@ variable "s3_bucket_name" {
 }
 
 variable "waf_rate_limit" {
-  type = number
+  type    = number
   default = 1000
 }

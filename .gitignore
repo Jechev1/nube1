@@ -17,6 +17,9 @@ terraform.rc
 # Archivos ZIP de Lambdas (si generaste alguno)
 *.zip
 
+# Dependencias de Lambda Layers, se instalan durante el apply (ver null_resource.install_layer_deps)
+**/layer/
+
 # Archivos del sistema y editor
 .vscode/
 .idea/

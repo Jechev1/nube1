@@ -4,6 +4,3 @@ variable "project_name" {
 variable "environment" {
   type = string
 }
-variable "cognito_user_pool_arn" {
-  type = string
-}
