@@ -83,12 +83,6 @@ def _authorize(event):
 
 
 def _wildcard_resource(method_arn: str) -> str:
-    # El authorizer cachea la policy por identity source (el token), no por
-    # recurso: si el Resource queda scoped al metodo/ruta exacto de la
-    # primera llamada, el resto de rutas devuelven 403 mientras dure el
-    # cache. Generalizamos a toda la API/stage para que el mismo token sirva
-    # en cualquier metodo/ruta durante el TTL del cache.
-    # methodArn: arn:aws:execute-api:{region}:{account}:{apiId}/{stage}/{method}/{resource}
     arn_base, stage = method_arn.split("/")[0], method_arn.split("/")[1]
     return f"{arn_base}/{stage}/*"
 

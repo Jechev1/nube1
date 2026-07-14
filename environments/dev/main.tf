@@ -32,10 +32,17 @@ module "iam" {
   account_id   = data.aws_caller_identity.current.account_id
 }
 
-module "apigateway" {
-  source       = "../../modules/apigateway"
+module "cognito" {
+  source       = "../../modules/cognito"
   project_name = var.project_name
   environment  = var.environment
+}
+
+module "apigateway" {
+  source              = "../../modules/apigateway"
+  project_name        = var.project_name
+  environment         = var.environment
+  cognito_user_pool_arn = module.cognito.user_pool_arn
 }
 
 module "auth" {

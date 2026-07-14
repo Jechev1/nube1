@@ -106,10 +106,6 @@ resource "null_resource" "install_layer_deps" {
   }
 
   provisioner "local-exec" {
-    # Sin comillas alrededor de los paths: en Windows, local-exec corre via
-    # "cmd /C <command>" y las comillas anidadas llegan literales al
-    # argumento (pip terminaba buscando el archivo '"...requirements.txt"').
-    # Los paths de este proyecto no tienen espacios, asi que es seguro.
     command = "python -m pip install --platform manylinux2014_x86_64 --python-version 3.12 --implementation cp --abi cp312 --only-binary=:all: --upgrade --target ${path.module}/layer/python -r ${path.module}/lambda/requirements.txt"
   }
 }
