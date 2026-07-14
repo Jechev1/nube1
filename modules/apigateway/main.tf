@@ -46,19 +46,6 @@ resource "aws_api_gateway_authorizer" "cognito" {
   provider_arns = [var.cognito_user_pool_arn]
 }
 
-# Deployment
-resource "aws_api_gateway_deployment" "deployment" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  depends_on  = [aws_api_gateway_integration.get_products]
-}
-
-# Stage dev
-resource "aws_api_gateway_stage" "dev" {
-  deployment_id = aws_api_gateway_deployment.deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.api.id
-  stage_name    = "dev"
-}
-
 # API Key
 resource "aws_api_gateway_api_key" "api_key" {
   name = "${var.project_name}-${var.environment}-api-key"
