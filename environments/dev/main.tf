@@ -39,9 +39,9 @@ module "cognito" {
 }
 
 module "apigateway" {
-  source              = "../../modules/apigateway"
-  project_name        = var.project_name
-  environment         = var.environment
+  source                = "../../modules/apigateway"
+  project_name          = var.project_name
+  environment           = var.environment
   cognito_user_pool_arn = module.cognito.user_pool_arn
 }
 
@@ -70,6 +70,21 @@ module "catalog" {
   lambda_role_name = module.iam.lambda_role_name
 }
 
+module "orders" {
+  source              = "../../modules/orders"
+  project_name        = var.project_name
+  environment         = var.environment
+  aws_region          = var.aws_region
+  account_id          = data.aws_caller_identity.current.account_id
+  api_gateway_id      = module.apigateway.api_id
+  v1_resource_id      = module.apigateway.v1_resource_id
+  authorizer_id       = module.auth.authorizer_id
+  lambda_role_arn     = module.iam.lambda_role_arn
+  lambda_role_name    = module.iam.lambda_role_name
+  cart_table_name     = module.catalog.cart_table_name
+  products_table_name = module.catalog.products_table_name
+}
+
 resource "aws_api_gateway_deployment" "main" {
   rest_api_id = module.apigateway.api_id
   triggers = {
@@ -77,12 +92,14 @@ resource "aws_api_gateway_deployment" "main" {
       module.apigateway.api_id,
       module.auth.auth_lambda_function_name,
       module.catalog.catalog_lambda_function_name,
+      module.orders.orders_lambda_function_name,
     ]))
   }
   depends_on = [
     module.apigateway,
     module.auth,
     module.catalog,
+    module.orders,
   ]
 }
 

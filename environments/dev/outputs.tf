@@ -44,3 +44,12 @@ output "products_table_name" {
 output "cart_table_name" {
   value = module.catalog.cart_table_name
 }
+
+# --- Orders Module ---
+output "orders_lambda_function_name" {
+  value = module.orders.orders_lambda_function_name
+}
+
+output "orders_table_name" {
+  value = module.orders.orders_table_name
+}
