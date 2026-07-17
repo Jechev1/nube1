@@ -83,6 +83,16 @@ module "orders" {
   lambda_role_name    = module.iam.lambda_role_name
   cart_table_name     = module.catalog.cart_table_name
   products_table_name = module.catalog.products_table_name
+  event_bus_name      = module.eventing.event_bus_name
+}
+
+module "eventing" {
+  source              = "../../modules/eventing"
+  project_name        = var.project_name
+  environment         = var.environment
+  products_table_name = module.catalog.products_table_name
+  products_table_arn  = module.catalog.products_table_arn
+  ses_sender_email    = var.ses_sender_email
 }
 
 resource "aws_api_gateway_deployment" "main" {

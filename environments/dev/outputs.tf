@@ -53,3 +53,20 @@ output "orders_lambda_function_name" {
 output "orders_table_name" {
   value = module.orders.orders_table_name
 }
+
+# eventing
+output "event_bus_name" {
+  value = module.eventing.event_bus_name
+}
+
+output "audit_table_name" {
+  value = module.eventing.audit_table_name
+}
+
+output "eventing_lambda_function_names" {
+  value = module.eventing.lambda_function_names
+}
+
+output "ses_sender_identity_arn" {
+  value = module.eventing.ses_sender_identity_arn
+}
