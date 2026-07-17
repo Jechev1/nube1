@@ -8,7 +8,8 @@ import events
 # Estados del pedido y transiciones permitidas.
 VALID_TRANSITIONS = {
     "pending": {"confirmed", "cancelled"},
-    "confirmed": {"shipped", "cancelled"},
+    "confirmed": {"preparing", "cancelled"},
+    "preparing": {"shipped", "cancelled"},
     "shipped": {"delivered"},
     "delivered": set(),
     "cancelled": set(),
@@ -66,6 +67,7 @@ def create_order(event) -> dict:
     events.publish("OrderCreated", {
         "order_id": order["order_id"],
         "user_id": user_id,
+        "customer_email": event["_auth"].get("email"),
         "items": order_items,
         "total_amount": total_amount,
     })

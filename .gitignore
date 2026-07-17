@@ -30,3 +30,6 @@ Thumbs.db
 
 # Archivos de logs
 *.log
+
+__pycache__/
+*.py[cod]
