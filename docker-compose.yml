@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  env:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloudshop-dev-env:latest
+    container_name: cloudshop-dev-env
+    # Mount the current directory into the container workspace
+    volumes:
+      - .:/workspace
+      # Mount AWS credentials securely from the host machine as read-only
+      - ~/.aws:/home/devuser/.aws:ro
+    environment:
+      - AWS_PROFILE=default
+      - AWS_REGION=us-east-1
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
