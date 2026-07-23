@@ -150,9 +150,26 @@ resource "aws_cloudwatch_dashboard" "main" {
           region = var.aws_region
           period = 300
           stat   = "Sum"
+          # AWS/Events solo publica Invocations/FailedInvocations con las
+          # dimensiones EventBusName + RuleName juntas (confirmado con
+          # list-metrics real): un metric fijo con solo EventBusName no
+          # devuelve datos. SEARCH() suma automaticamente todas las reglas
+          # del bus sin necesitar conocer sus nombres de antemano.
           metrics = [
-            ["AWS/Events", "Invocations", "EventBusName", var.event_bus_name, { label = "Exitosas" }],
-            ["AWS/Events", "FailedInvocations", "EventBusName", var.event_bus_name, { label = "Fallidas" }],
+            [
+              {
+                expression = "SEARCH('{AWS/Events,EventBusName,RuleName} EventBusName=\"${var.event_bus_name}\" MetricName=\"Invocations\"', 'Sum', 300)",
+                label      = "Exitosas (todas las reglas)",
+                id         = "e1"
+              }
+            ],
+            [
+              {
+                expression = "SEARCH('{AWS/Events,EventBusName,RuleName} EventBusName=\"${var.event_bus_name}\" MetricName=\"FailedInvocations\"', 'Sum', 300)",
+                label      = "Fallidas (todas las reglas)",
+                id         = "e2"
+              }
+            ],
           ]
         }
       },

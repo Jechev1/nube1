@@ -156,6 +156,17 @@ resource "aws_iam_role_policy" "audit_logger" {
   })
 }
 
+# Mientras la cuenta este en SES sandbox, cada destinatario (ademas del
+# remitente) tambien debe estar verificado, y SES evalua el permiso IAM de
+# ses:SendEmail contra la identidad del DESTINATARIO ademas de la del
+# remitente (confirmado en pruebas reales: AccessDenied citando el ARN del
+# destinatario aunque el codigo solo use SES_FROM_EMAIL como Source). Por
+# eso el Resource no puede quedar scoped solo a la identidad del remitente;
+# se amplia a todas las identidades SES de la cuenta (no un Resource "*"
+# total) hasta salir de sandbox, donde ya no aplicaria esta restriccion.
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_role_policy" "notification_email" {
   name = "send-order-emails"
   role = aws_iam_role.processor["notification_email"].id
@@ -168,7 +179,7 @@ resource "aws_iam_role_policy" "notification_email" {
           "ses:SendEmail",
           "ses:SendRawEmail"
         ]
-        Resource = aws_ses_email_identity.sender.arn
+        Resource = "arn:aws:ses:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:identity/*"
       }
     ]
   })
