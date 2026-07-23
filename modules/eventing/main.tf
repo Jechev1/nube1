@@ -28,6 +28,43 @@ resource "aws_cloudwatch_event_bus" "orders" {
   }
 }
 
+# DLQ compartida para los targets de EventBridge: si una invocacion a un
+# processor agota sus reintentos (maximum_retry_attempts / maximum_event_age_in_seconds
+# en aws_cloudwatch_event_target de abajo), el evento cae aqui en vez de perderse.
+resource "aws_sqs_queue" "event_target_dlq" {
+  name                      = "${var.project_name}-${var.environment}-event-target-dlq"
+  message_retention_seconds = 1209600 # 14 dias, maximo permitido
+
+  tags = {
+    Project     = var.project_name
+    Environment = var.environment
+  }
+}
+
+resource "aws_sqs_queue_policy" "event_target_dlq" {
+  queue_url = aws_sqs_queue.event_target_dlq.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowEventBridgeDLQ"
+        Effect    = "Allow"
+        Principal = { Service = "events.amazonaws.com" }
+        Action    = "sqs:SendMessage"
+        Resource  = aws_sqs_queue.event_target_dlq.arn
+        Condition = {
+          ArnEquals = {
+            "aws:SourceArn" = [
+              aws_cloudwatch_event_rule.order_created.arn,
+              aws_cloudwatch_event_rule.order_audit.arn,
+            ]
+          }
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_dynamodb_table" "audit" {
   name         = "${var.project_name}-${var.environment}-Audit"
   billing_mode = "PAY_PER_REQUEST"
@@ -219,6 +256,10 @@ resource "aws_cloudwatch_event_target" "processor" {
   retry_policy {
     maximum_event_age_in_seconds = 3600
     maximum_retry_attempts       = 2
+  }
+
+  dead_letter_config {
+    arn = aws_sqs_queue.event_target_dlq.arn
   }
 }
 
