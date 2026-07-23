@@ -8,6 +8,25 @@ Se realizó una petición `GET /v1/products` con la API Key correcta pero **sin 
 
 ---
 
+### Caso 2 – Pedido completo con inventario, auditoría y correo
+
+Se ejecutó el flujo completo contra la API real: registro, login, consulta de catálogo, carrito y creación de un pedido. El evento `OrderCreated` disparó las 3 Lambdas async (`update_inventory`, `audit_logger`, `notification_email`), confirmadas en CloudWatch Logs y en la tabla `Orders` de DynamoDB. Durante la prueba se encontró y corrigió un bug real de IAM: la policy de `notification_email` solo cubría la identidad SES del remitente, pero en modo sandbox AWS exige permiso también sobre la identidad del destinatario — se amplió la policy y se confirmó el envío exitoso.
+
+![Caso 2 - Logs de notification_email](evidencias/C2_notification_email_logs.png)
+![Caso 2 - Pedidos reales en DynamoDB](evidencias/C2_dynamodb_orders.png)
+
+---
+
+### Caso 3 – Métricas en CloudWatch
+
+Se capturaron las métricas reales del dashboard `cloudshop-dev-dashboard` (invocaciones y errores por Lambda, duración, EventBridge, DLQ) y las 14 alarmas de CloudWatch, todas en estado `OK`. La alarma de `notification_email` se ve pasar por `ALARM` durante el incidente del Caso 2 y volver a `OK` tras el fix, confirmando que el monitoreo detecta incidentes reales.
+
+![Caso 3 - Dashboard CloudWatch (1)](evidencias/C3_dashboard_1.png)
+![Caso 3 - Dashboard CloudWatch (2)](evidencias/C3_dashboard_2.png)
+![Caso 3 - Alarmas CloudWatch](evidencias/C3_alarmas.png)
+
+---
+
 ### Caso 4 – Despliegue completo mediante Terraform
 
 Se ejecutó `terraform apply` desde cero, creando todos los recursos definidos en el código (S3, CloudFront, WAF, API Gateway, IAM, Cognito). Terraform completó el despliegue exitosamente.`
