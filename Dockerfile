@@ -23,6 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy Terraform binary from the builder stage
 COPY --from=terraform-builder /bin/terraform /usr/local/bin/terraform
 
+# pytest es el unico paquete Python que hace falta para correr "pytest tests/":
+# los tests fingen boto3 via types.ModuleType, no necesitan boto3/moto reales.
+RUN pip install --no-cache-dir pytest
+
 # Set the working directory
 WORKDIR /workspace
 
@@ -32,5 +36,8 @@ RUN chown -R devuser:devgroup /workspace
 # Switch to the non-root user
 USER devuser
 
-# Set entrypoint to bash for interactive usage
-ENTRYPOINT ["/bin/bash"]
+# CMD (no ENTRYPOINT): "docker compose run env" sin comando abre bash
+# interactivo igual que antes, pero "docker compose run env <cmd> <args>"
+# ahora ejecuta <cmd> directo en vez de intentar correrlo como si fuera un
+# script de shell (que es lo que pasaba con ENTRYPOINT ["/bin/bash"]).
+CMD ["/bin/bash"]
