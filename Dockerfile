@@ -1,10 +1,17 @@
 # Multi-stage build for security and reduced image size
-FROM docker.io/hashicorp/terraform:1.9.0 AS terraform-builder
+# Pinned to match the Terraform version used to validate/apply this repo's
+# state (see .terraform/terraform.tfstate) -- an older Terraform reopening a
+# newer version's local backend metadata fails with "Backend configuration
+# changed", so this must stay in sync with whatever actually touches state.
+FROM docker.io/hashicorp/terraform:1.15.8 AS terraform-builder
 
 FROM docker.io/library/python:3.12-slim
 
-# Create a non-root user and group
-RUN addgroup --system devgroup && adduser --system --ingroup devgroup devuser
+# Create a non-root user and group. --system alone gives HOME=/nonexistent
+# on Debian, which breaks "~/.aws" expansion for the credentials volume
+# docker-compose mounts at /home/devuser/.aws -- --home/--create-home make
+# that the user's real HOME so it actually resolves.
+RUN addgroup --system devgroup && adduser --system --home /home/devuser --ingroup devgroup devuser
 
 # Install system dependencies and AWS CLI
 # We use a single RUN command to minimize layers and clean up apt cache afterwards

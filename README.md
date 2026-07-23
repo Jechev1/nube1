@@ -41,6 +41,32 @@ Se ejecutó `terraform apply` desde cero, creando todos los recursos definidos e
 
 Copia `environments/dev/terraform.tfvars.example` a `environments/dev/terraform.tfvars` y completa los valores reales (ver comentarios en el archivo).
 
+### Entorno de desarrollo con Docker (opcional, recomendado)
+
+El repo incluye un `Dockerfile`/`docker-compose.yml` con Terraform, AWS CLI y pytest preinstalados — evita tener que instalar nada localmente. Corre como usuario no-root y monta el repo + tus credenciales de AWS (solo lectura) dentro del contenedor.
+
+**Construir la imagen:**
+```
+docker compose build
+```
+
+**Levantar una shell interactiva dentro del contenedor** (monta el repo en `/workspace`, credenciales en `~/.aws` read-only):
+```
+docker compose run --rm env
+```
+Desde ahí corres los comandos normales de Terraform/AWS CLI del resto de este README (`cd environments/dev && terraform init`, etc.) como si estuvieras en tu máquina, pero con el entorno ya listo.
+
+**O correr un comando puntual sin entrar a una shell**, por ejemplo los tests:
+```
+docker compose run --rm env pytest tests/ -q
+```
+o validar el Terraform sin aplicar nada:
+```
+docker compose run --rm env bash -c "cd environments/dev && terraform init && terraform validate"
+```
+
+Requisitos: Docker Desktop corriendo, y `~/.aws/credentials` configurado en tu máquina host (el contenedor lo monta, no lo genera). El contenedor **no** hace `terraform apply` por sí solo — sigue siendo un paso manual que corres tú dentro (o fuera) del contenedor.
+
 ### Backend remoto (una sola vez, antes del primer `apply` de `environments/dev`)
 
 ```
